@@ -33,5 +33,12 @@ int main(int argc, const char** argv)
 
     H5Easy::dump(file, "E", E, H5Easy::DumpOptions(H5Easy::Compression(compression)));
 
+    HighFive::DataSet ds = file.getDataSet("E");
+
+    std::string string_list("these are some attributes");
+
+    Attribute a = ds.createAttribute<std::string>("attributename", DataSpace::From(string_list));
+    a.write(string_list);
+
     return 0;
 }
