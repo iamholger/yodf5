@@ -4,13 +4,9 @@
 #include <functional>
 
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xio.hpp>
 
 #include "Eigen/Dense"
 
-#define H5_USE_EIGEN
 
 #define H5_USE_XTENSOR
 #include <highfive/H5Easy.hpp>
