@@ -5,9 +5,6 @@
 
 #include <xtensor/xtensor.hpp>
 
-#include "Eigen/Dense"
-
-
 #define H5_USE_XTENSOR
 #include <highfive/H5Easy.hpp>
 #include <highfive/H5DataSet.hpp>
@@ -19,7 +16,6 @@
 
 using namespace std;
 using namespace YODA;
-using namespace Eigen;
 using namespace HighFive;
 
 // Pre C++20 this is needed
@@ -139,6 +135,22 @@ void fillScaledBy(unordered_map<string, AnalysisObject* > aomap,  vector<string>
   }
 }
 
+
+inline vector<double> get_edge(unordered_map<string, AnalysisObject* > aomap, vector<string> const & hnames, double (HistoBin1D::*function)() const) 
+{
+    vector<double> edges;
+    for (auto hn : hnames) 
+    {
+        edges.push_back(0.0);
+        edges.push_back(0.0);
+        edges.push_back(0.0);
+        auto h = dynamic_cast<Histo1D*>(aomap[hn]);
+        for (int nb=0;nb< h->numBins();++nb) edges.push_back((h->bin(nb).*function)());
+    }
+    return edges;
+}
+
+
 int main(int argc, const char** argv)
 {
     int compression=atoi(argv[1]);
@@ -196,6 +208,7 @@ int main(int argc, const char** argv)
       d.write(zinfo);
 
       
+      // Scaling information
       xt::xtensor<double, 2>::shape_type sh2 = {h1d_names.size(), NV};
       auto sb = xt::empty<double>(sh2);
       fillScaledBy(aomap, h1d_names, vars, sb);
@@ -213,6 +226,9 @@ int main(int argc, const char** argv)
       Attribute e = ds2.createAttribute<std::string>("hasScaledBy", DataSpace::From(hasScaledBy));
       e.write(hasScaledBy);
 
+      // Bin edges
+      file.createDataSet("Histo1D_xMin",   get_edge(aomap, h1d_names, &HistoBin1D::xMin));
+      file.createDataSet("Histo1D_xMax",   get_edge(aomap, h1d_names, &HistoBin1D::xMax));
       
     return 0;
 }
