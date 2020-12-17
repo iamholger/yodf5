@@ -118,6 +118,26 @@ void fill_h1d_field_xt(
         }
     }
 }
+        
+
+void fillScaledBy(unordered_map<string, AnalysisObject* > aomap,  vector<string> const & hnames, vector<string> const & vars, xt::xtensor<double, 2> & target)
+{
+  for (size_t i=0; i<hnames.size();++i)
+  {
+    for (size_t j=0; j<vars.size();++j)
+    {
+      std::string varhname = (j>0) ? hnames[i]+"["+vars[j]+"]" : hnames[i];
+      if (aomap[varhname]->hasAnnotation("ScaledBy"))
+      {
+        target(i,j) = std::stod(aomap[varhname]->annotation("ScaledBy"));
+      }
+      else
+      {
+        target(i,j) = -1.;
+      }
+    }
+  }
+}
 
 int main(int argc, const char** argv)
 {
@@ -174,6 +194,25 @@ int main(int argc, const char** argv)
       vector<string> zinfo = {"sumW", "sumW2", "sumWX", "sumWX2", "numEntries"};
       Attribute d = ds.createAttribute<std::string>("zinfo", DataSpace::From(zinfo));
       d.write(zinfo);
+
+      
+      xt::xtensor<double, 2>::shape_type sh2 = {h1d_names.size(), NV};
+      auto sb = xt::empty<double>(sh2);
+      fillScaledBy(aomap, h1d_names, vars, sb);
+
+      vector<std::string> hasScaledBy;
+      for (auto hn : h1d_names)
+      {
+        if (aomap[hn]->hasAnnotation("ScaledBy")) hasScaledBy.push_back("true");
+        else                                      hasScaledBy.push_back("false");
+      }
+
+      H5Easy::dump(file, "Histo1D_ScaledBy", sb, H5Easy::DumpOptions(H5Easy::Compression(compression)));
+
+      HighFive::DataSet ds2 = file.getDataSet("Histo1D_ScaledBy");
+      Attribute e = ds2.createAttribute<std::string>("hasScaledBy", DataSpace::From(hasScaledBy));
+      e.write(hasScaledBy);
+
       
     return 0;
 }
